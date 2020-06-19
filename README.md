@@ -20,7 +20,17 @@ docker rm $(docker ps -aq)
 docker run --env MinimumLength=10 nanocountwords:v4
 docker rmi $(docker images nanoc* -q)
 ```
-
+### run
 ```powershell
 docker run --env-file env.list  nanocountwords:v6 | ConvertFrom-Json | Select-Object -ExpandProperty Data
+```
+### output
+```
+Count Name
+----- ----
+  120 CLAUDIUS
+  119 POLONIUS
+   95 GERTRUDE
+   76 ROSENCRANTZ
+   64 GUILDENSTERN
 ```
