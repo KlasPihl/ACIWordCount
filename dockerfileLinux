@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/powershell:lts-ubuntu-18.04
+
+LABEL maintainer  = "Klas.Pihl@gmail.com"
+COPY CountWords.ps1  /
+CMD pwsh ./CountWords.ps1

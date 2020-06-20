@@ -20,6 +20,7 @@
 #>
 [CmdletBinding()]
 param ()
+$progressPreference = 'silentlyContinue'
 $uri = if($env:uri) {
     $env:uri
 } else {
