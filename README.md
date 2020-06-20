@@ -87,5 +87,6 @@ Changed base image to lts-nanoserver-1809 and deployment in ACI completed
 
 ## Findings
 Logic apps only support ACI *groups*. ACI groups only sopports Linux containers.
+![Support matrix groups with Windows containers](./pictures/ACIgroupsupportWindows.png)
 
 Cached images in [azure](https://docs.microsoft.com/en-us/rest/api/container-instances/listcachedimages/listcachedimages) for quicker startups
