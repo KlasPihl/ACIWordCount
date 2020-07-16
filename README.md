@@ -85,6 +85,19 @@ Error;
 ```
 Changed base image to lts-nanoserver-1809 and deployment in ACI completed
 
+## Logic apps
+```powershell
+     $uri = 'https://prod-40.northeurope.logic.azure.com:443/workflows/42b952b8137d4172ac376993e9cefcc2/triggers/manual/paths/invoke?numberwords=3&minimumlength=6&uri=http://shakespeare.mit.edu/romeo_juliet/full.html&api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<code>'
+        (Invoke-WebRequest -Uri $uri | ConvertFrom-Json).inputs.body
+ ```
+## Function apps
+```powershell
+    Invoke-RestMethod -Method Post -Uri 'http://localhost:7071/api/HttpTrigger1' `
+    -Body '{"uri":"https://docs.microsoft.com/en-us/dotnet/api/system.net.httpstatuscode?view=netcore-3.1"}' |
+    Select-Object -ExpandProperty Data
+ ```
+
+
 ## Findings
 Logic apps only support ACI *groups*. ACI groups only sopports Linux containers.
 ![Support matrix groups with Windows containers](./pictures/ACIgroupsupportWindows.png)

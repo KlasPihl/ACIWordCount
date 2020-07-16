@@ -1,10 +1,15 @@
+using namespace System.Net
 <#
 .SYNOPSIS
     Converts text on web page and returns the n number of most common words with a minimum length of y
 .DESCRIPTION
-    -
+    Build for Azure function app.  At least one parameter must be defined.
 .EXAMPLE
-    PS C:\>
+    PS C:\> Invoke-RestMethod -Method Post -Uri 'http://uri:7071/api/HttpTrigger1'-Body '{"MinimumLength":7}'  | Select-Object SelectionCriteria
+
+    PS C:\> Invoke-RestMethod -Method Post -Uri 'http://localhost:7071/api/HttpTrigger1' `
+        -Body '{"uri":"https://docs.microsoft.com/en-us/dotnet/api/system.net.httpstatuscode?view=netcore-3.1"}' |
+        Select-Object -ExpandProperty Data
 .PARAMETER uri
     URI of source text, can be formatted plain or in html
 .PARAMETER NumberWords
@@ -18,28 +23,8 @@
         Test project to use Azure function app and ACI
         A windows native rewrite of https://github.com/seanmck/aci-wordcount
 #>
-[CmdletBinding()]
-param ()
-$progressPreference = 'silentlyContinue'
-$uri = if($env:uri) {
-    $env:uri
-} else {
-    'http://shakespeare.mit.edu/romeo_juliet/full.html'
-}
-
-$NumberWords = if($env:uri) {
-    $env:NumberWords
-} else {
-    10
-}
-$MinimumLength = if($env:uri) {
-    $env:MinimumLength
-} else {
-    5
-}
-Write-Debug $uri
-Write-Debug $NumberWords
-Write-Debug $MinimumLength
+# Input bindings are passed in via param block.
+param($Request, $TriggerMetadata)
 function Convert-HtmlToText {
     #stolen from http://winstonfassett.com/blog/2010/09/21/html-to-text-conversion-in-powershell/
     param([System.String] $html)
@@ -49,7 +34,7 @@ function Convert-HtmlToText {
     # write-verbose "removed line breaks: `n`n$html`n"
 
     # remove invisible content
-    @('head', 'style', 'script', 'object', 'embed', 'applet', 'noframes', 'noscript', 'noembed') | % {
+    @('head', 'style', 'script', 'object', 'embed', 'applet', 'noframes', 'noscript', 'noembed') | ForEach-Object {
      $html = $html -replace "<$_[^>]*?>.*?</$_>", ""
     }
     # write-verbose "removed invisible blocks: `n`n$html`n"
@@ -59,9 +44,9 @@ function Convert-HtmlToText {
     # write-verbose "condensed whitespace: `n`n$html`n"
 
     # Add line breaks
-    @('div','p','blockquote','h[1-9]') | % { $html = $html -replace "</?$_[^>]*?>.*?</$_>", ("`n" + '$0' )}
+    @('div','p','blockquote','h[1-9]') | ForEach-Object { $html = $html -replace "</?$_[^>]*?>.*?</$_>", ("`n" + '$0' )}
     # Add line breaks for self-closing tags
-    @('div','p','blockquote','h[1-9]','br') | % { $html = $html -replace "<$_[^>]*?/>", ('$0' + "`n")}
+    @('div','p','blockquote','h[1-9]','br') | ForEach-Object { $html = $html -replace "<$_[^>]*?/>", ('$0' + "`n")}
     # write-verbose "added line breaks: `n`n$html`n"
 
     #strip tags
@@ -85,12 +70,47 @@ function Convert-HtmlToText {
      @("&amp;(reg|#174);", "(r)"),
      @("&amp;nbsp;", " "),
      @("&amp;(.{2,6});", "")
-    ) | % { $html = $html -replace $_[0], $_[1] }
+    ) | ForEach-Object { $html = $html -replace $_[0], $_[1] }
     # write-verbose "replaced entities: `n`n$html`n"
 
     return $html
 
    }
+# Write to the Azure Functions log stream.
+Write-Host "PowerShell HTTP trigger function processed a request."
+
+# Interact with query parameters or the body of the request.
+$InputData = $Request.RawBody | ConvertFrom-Json
+
+
+if ($InputData) {
+    $status = [HttpStatusCode]::OK
+    #region wordcount
+$uri = if($InputData.uri) {
+    $InputData.uri
+} else {
+    'http://shakespeare.mit.edu/romeo_juliet/full.html'
+    Write-Warning "Parameter uri not defined, using default 'http://shakespeare.mit.edu/romeo_juliet/full.html'"
+
+}
+
+$NumberWords = if($InputData.NumberWords) {
+    $InputData.NumberWords
+} else {
+    10
+    Write-Warning "Parameter NumberWords not defined, using default value of 10"
+}
+$MinimumLength = if($InputData.MinimumLength) {
+    $InputData.MinimumLength
+} else {
+    5
+    Write-Warning "Parameter MinimumLength not defined, using default value of 5"
+
+}
+Write-Debug $uri
+Write-Debug $NumberWords
+Write-Debug $MinimumLength
+
 
 
 try {
@@ -121,7 +141,7 @@ try {
         }
     } | ConvertTo-Json
 
-    Write-Output $OutputJason
+    $body =  $OutputJason
 
 
 
@@ -131,3 +151,22 @@ try {
     Write-output $error.Exception
     exit 1
 }
+
+#endregion wordcount
+} else {
+    $status = [HttpStatusCode]::BadRequest
+    $body = 'Request body missing arguments, use -Body "{"uri":"http://shakespeare.mit.edu/romeo_juliet/full.html"}'
+}
+
+
+
+
+
+
+
+# Associate values to output bindings by calling 'Push-OutputBinding'.
+Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    StatusCode = $status
+    Body = $body
+    #Body = $Request.Body
+})

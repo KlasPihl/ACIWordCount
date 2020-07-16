@@ -1,0 +1,399 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflows_pihl_countwords_name": {
+            "defaultValue": "pihl-countwords",
+            "type": "String"
+        },
+        "containerGroups___encodeURIComponent_workflow____run____name_____externalid": {
+            "defaultValue": "/subscriptions/@{encodeURIComponent('8332bda4-0051-4602-9ab3-42fae7294d3d')}/resourceGroups/@{encodeURIComponent('Docker')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(workflow()['run']['name'])}",
+            "type": "String"
+        },
+        "containerGroups___encodeURIComponent_body__ACI_staus_____name_____externalid": {
+            "defaultValue": "/subscriptions/@{encodeURIComponent('8332bda4-0051-4602-9ab3-42fae7294d3d')}/resourceGroups/@{encodeURIComponent('Docker')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body('ACI_staus')?['name'])}",
+            "type": "String"
+        },
+        "containerGroups___encodeURIComponent_body__Create_ACI_group_____name_____externalid": {
+            "defaultValue": "/subscriptions/@{encodeURIComponent('8332bda4-0051-4602-9ab3-42fae7294d3d')}/resourceGroups/@{encodeURIComponent('Docker')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body('Create_ACI_group')?['name'])}",
+            "type": "String"
+        },
+        "connections_aci_externalid": {
+            "defaultValue": "/subscriptions/8332bda4-0051-4602-9ab3-42fae7294d3d/resourceGroups/Docker/providers/Microsoft.Web/connections/aci",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('workflows_pihl_countwords_name')]",
+            "location": "northeurope",
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "manual": {
+                            "type": "Request",
+                            "kind": "Http",
+                            "inputs": {
+                                "method": "GET",
+                                "schema": {
+                                    "properties": {
+                                        "MinimumLength": {
+                                            "type": "integer"
+                                        },
+                                        "NumberWords": {
+                                            "type": "integer"
+                                        },
+                                        "uri": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Create_ACI_group": {
+                            "runAfter": {
+                                "Parse_JSON_2": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "location": "northeurope",
+                                    "properties": {
+                                        "containers": [
+                                            {
+                                                "name": "logiqcountwords",
+                                                "properties": {
+                                                    "environmentVariables": [
+                                                        {
+                                                            "name": "uri",
+                                                            "value": "@body('Parse_JSON_2')?['uri']"
+                                                        },
+                                                        {
+                                                            "name": "NumberWords",
+                                                            "value": "@{body('Parse_JSON_2')?['NumberWords']}"
+                                                        },
+                                                        {
+                                                            "name": "MinimumLength",
+                                                            "value": "@{body('Parse_JSON_2')?['MinimumLength']}"
+                                                        }
+                                                    ],
+                                                    "image": "acrpihl.azurecr.io/countwords:v3",
+                                                    "resources": {
+                                                        "requests": {
+                                                            "cpu": 1,
+                                                            "memoryInGB": 0.5
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "imageRegistryCredentials": [
+                                            {
+                                                "password": "y/HVSGieb7HosyH3VmNntyS2vbYCRtqm",
+                                                "server": "acrpihl.azurecr.io",
+                                                "username": "acrpihl"
+                                            }
+                                        ],
+                                        "osType": "Linux",
+                                        "restartPolicy": "OnFailure",
+                                        "sku": "Standard"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['aci']['connectionId']"
+                                    }
+                                },
+                                "method": "put",
+                                "path": "[parameters('containerGroups___encodeURIComponent_workflow____run____name_____externalid')]",
+                                "queries": {
+                                    "x-ms-api-version": "2019-12-01"
+                                }
+                            }
+                        },
+                        "Delay_2": {
+                            "runAfter": {
+                                "Initialize_variable_Result": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Wait",
+                            "inputs": {
+                                "interval": {
+                                    "count": 30,
+                                    "unit": "Second"
+                                }
+                            }
+                        },
+                        "For_each_2": {
+                            "foreach": "@body('ACI_staus')['properties']['containers']",
+                            "actions": {
+                                "Delete_a_container_group": {
+                                    "runAfter": {
+                                        "Set_variable": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['aci']['connectionId']"
+                                            }
+                                        },
+                                        "method": "delete",
+                                        "path": "[parameters('containerGroups___encodeURIComponent_body__ACI_staus_____name_____externalid')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2019-12-01"
+                                        }
+                                    }
+                                },
+                                "Get_logs_from_a_container_instance": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['aci']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[concat(parameters('containerGroups___encodeURIComponent_body__ACI_staus_____name_____externalid'), '/containers/@{encodeURIComponent(items(''For_each_2'')[''name''])}/logs')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2019-12-01"
+                                        }
+                                    }
+                                },
+                                "Parse_JSON": {
+                                    "runAfter": {
+                                        "Get_logs_from_a_container_instance": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ParseJson",
+                                    "inputs": {
+                                        "content": "@body('Get_logs_from_a_container_instance')?['content']",
+                                        "schema": {
+                                            "properties": {
+                                                "Data": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "Count": {
+                                                                "type": "integer"
+                                                            },
+                                                            "Name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "Count",
+                                                            "Name"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "SelectionCriteria": {
+                                                    "properties": {
+                                                        "MinimumLength": {
+                                                            "type": "string"
+                                                        },
+                                                        "NumberWords": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "Source": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "Set_variable": {
+                                    "runAfter": {
+                                        "Parse_JSON": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "Result",
+                                        "value": "@body('Parse_JSON')?['Data']"
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Until": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "Initialize_variable_Result": {
+                            "runAfter": {
+                                "Initialize_variable_Status": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "Result",
+                                        "type": "array"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_Status": {
+                            "runAfter": {
+                                "Create_ACI_group": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "Status",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Parse_JSON_2": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerOutputs()['queries']",
+                                "schema": {
+                                    "properties": {
+                                        "MinimumLength": {
+                                            "type": "integer"
+                                        },
+                                        "NumberWords": {
+                                            "type": "integer"
+                                        },
+                                        "uri": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "Response": {
+                            "runAfter": {
+                                "For_each_2": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Response",
+                            "kind": "Http",
+                            "inputs": {
+                                "body": "@variables('Result')",
+                                "statusCode": 200
+                            }
+                        },
+                        "Until": {
+                            "actions": {
+                                "ACI_staus": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['aci']['connectionId']"
+                                            }
+                                        },
+                                        "method": "get",
+                                        "path": "[parameters('containerGroups___encodeURIComponent_body__Create_ACI_group_____name_____externalid')]",
+                                        "queries": {
+                                            "x-ms-api-version": "2019-12-01"
+                                        }
+                                    }
+                                },
+                                "Delay_3": {
+                                    "runAfter": {
+                                        "For_each": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Wait",
+                                    "inputs": {
+                                        "interval": {
+                                            "count": 10,
+                                            "unit": "Second"
+                                        }
+                                    }
+                                },
+                                "For_each": {
+                                    "foreach": "@body('ACI_staus')['properties']['containers']",
+                                    "actions": {
+                                        "Append_to_string_variable": {
+                                            "runAfter": {},
+                                            "type": "AppendToStringVariable",
+                                            "inputs": {
+                                                "name": "Status",
+                                                "value": "@items('For_each')?['properties']?['instanceView']?['currentState']?['detailStatus']"
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "ACI_staus": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Foreach"
+                                }
+                            },
+                            "runAfter": {
+                                "Delay_2": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": "@contains(variables('Status'), 'Completed')",
+                            "limit": {
+                                "count": 60,
+                                "timeout": "PT1H"
+                            },
+                            "type": "Until"
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "aci": {
+                                "connectionId": "[parameters('connections_aci_externalid')]",
+                                "connectionName": "aci",
+                                "id": "/subscriptions/8332bda4-0051-4602-9ab3-42fae7294d3d/providers/Microsoft.Web/locations/northeurope/managedApis/aci"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,45 +1,54 @@
+using namespace System.Net
+
+# Input bindings are passed in via param block.
+param($Request, $TriggerMetadata)
+
+# Write to the Azure Functions log stream.
+Write-Host "PowerShell HTTP trigger function processed a request."
+
+# Interact with query parameters or the body of the request.
+$name = $Request.Query.NumberWords
+Write-Host "Body: $($Request.Body | out-string)"
+
+Write-Host "Query: $($Request.query | out-string)"
+
+write-host "Trigger $($TriggerMetadata.Keys | out-string)"
+
+write-host $TriggerMetadata.NumberWords
+$NumberWords=$TriggerMetadata.NumberWords
+
+if (-not $name) {
+    $name = $Request.Body.Name
+}
 <#
-.SYNOPSIS
-    Converts text on web page and returns the n number of most common words with a minimum length of y
-.DESCRIPTION
-    -
-.EXAMPLE
-    PS C:\>
-.PARAMETER uri
-    URI of source text, can be formatted plain or in html
-.PARAMETER NumberWords
-    Number of words to return
-.PARAMETER MinimumLength
-    Minimal length of words to be in scope.
-.OUTPUTS
-    json formatted table with source, arguments and result in table
-.NOTES
-    2020-06-19 Versio 1 Klas.Pihl@gmail.com
-        Test project to use Azure function app and ACI
-        A windows native rewrite of https://github.com/seanmck/aci-wordcount
+switch ($Request.Body) {
+    condition {  }
+    Default {}
+}
 #>
-[CmdletBinding()]
-param ()
-$progressPreference = 'silentlyContinue'
-$uri = if($env:uri) {
-    $env:uri
+if ($name) {
+    $status = [HttpStatusCode]::OK
+    $body = "Hello $name"
+    #region wordcount
+$uri = if($TriggerMetadata.uri) {
+    $TriggerMetadata.uri
 } else {
     'http://shakespeare.mit.edu/romeo_juliet/full.html'
 }
 
-$NumberWords = if($env:uri) {
-    $env:NumberWords
+$NumberWords = if($TriggerMetadata.NumberWords) {
+    $TriggerMetadata.NumberWords
 } else {
     10
 }
-$MinimumLength = if($env:uri) {
-    $env:MinimumLength
+$MinimumLength = if($TriggerMetadata.MinimumLength) {
+    $TriggerMetadata.MinimumLength
 } else {
     5
 }
-Write-Debug $uri
-Write-Debug $NumberWords
-Write-Debug $MinimumLength
+Write-Host $uri
+Write-Host $NumberWords
+Write-Host $MinimumLength
 function Convert-HtmlToText {
     #stolen from http://winstonfassett.com/blog/2010/09/21/html-to-text-conversion-in-powershell/
     param([System.String] $html)
@@ -121,7 +130,7 @@ try {
         }
     } | ConvertTo-Json
 
-    Write-Output $OutputJason
+    $body =  $OutputJason
 
 
 
@@ -131,3 +140,22 @@ try {
     Write-output $error.Exception
     exit 1
 }
+
+#endregion wordcount
+} else {
+    $status = [HttpStatusCode]::BadRequest
+    $body = "Please pass a name on the query string or in the request body."
+}
+
+
+
+
+
+
+
+# Associate values to output bindings by calling 'Push-OutputBinding'.
+Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    StatusCode = $status
+    Body = $body
+    #Body = $Request.Body
+})
