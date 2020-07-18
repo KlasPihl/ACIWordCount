@@ -1,14 +1,17 @@
 # ACIWordCount
-Lab project on containers and logic apps
+Lab project on containers, logic apps and functions in Azure.
+
 
 ## Base
 [ACI wordcount](https://hub.docker.com/_/microsoft-azuredocs-aci-wordcount) on Linux & python
 
 ## Plan
-* Create windows server [nano container running powershell 7](https://hub.docker.com/_/microsoft-powershell)
-  * Accept optional url input for input
-  * output result in json
-* Create logic ap and trigger by webhook
+* :heavy_check_mark: Create windows server [nano container running powershell 7](https://hub.docker.com/_/microsoft-powershell)
+  * :heavy_check_mark: Accept optional url input for input
+  * :heavy_check_mark: output result in json
+* :heavy_check_mark: Create logic app and trigger by webhook
+* :heavy_check_mark: Create function app
+* :white_check_mark: Build pipeline to build container image when code is committed.
 
 ## Action
 
@@ -107,11 +110,11 @@ Logic apps only support ACI *groups*. ACI groups only sopports Linux containers.
 Cached images in [azure](https://docs.microsoft.com/en-us/rest/api/container-instances/listcachedimages/listcachedimages) for quicker startups
 
 ## Performance
-
+Changed delay in logic app to 20 s initial delay and 1 seconds in loop waiting for ACI to finish.
 ### Target 'http://shakespeare.mit.edu/romeo_juliet/full.html' (slow webresponse?)
 Technique|Cold/warm|Execution time
 -|-|-
-Logic app running ACI|Cold|56s
+Logic app running ACI|Cold|54s
 Logic app running ACI|Warm|56s
 Docker WinNano|Cold |12s
 Function app Powershell|Cold|14s
@@ -122,7 +125,7 @@ Function app Powershell|Warm|13s
 Technique|Cold/warm|Execution time
 -|-|-
 Logic app running ACI|Cold|56s
-Logic app running ACI|Warm|44s
+Logic app running ACI|Warm|33s
 Docker WinNano|Cold |1.8s
 Function app Powershell|Cold|11s
 Function app Powershell|Warm|1.7s
