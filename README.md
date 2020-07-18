@@ -23,6 +23,8 @@ docker rmi $(docker images nanoc* -q)
 ### run
 ```powershell
 docker run --env-file env.list  nanocountwords:v6 | ConvertFrom-Json | Select-Object -ExpandProperty Data
+
+docker run --env uri="https://docs.microsoft.com/en-us/azure/azure-functions/functions-compare-logic-apps-ms-flow-webjobs" --env MinimumLength=7 --env NumberWords=7 countword
 ```
 ### output
 ```
@@ -103,3 +105,24 @@ Logic apps only support ACI *groups*. ACI groups only sopports Linux containers.
 ![Support matrix groups with Windows containers](./pictures/ACIgroupsupportWindows.png)
 
 Cached images in [azure](https://docs.microsoft.com/en-us/rest/api/container-instances/listcachedimages/listcachedimages) for quicker startups
+
+## Performance
+
+### Target 'http://shakespeare.mit.edu/romeo_juliet/full.html' (slow webresponse?)
+Technique|Cold/warm|Execution time
+-|-|-
+Logic app running ACI|Cold|56s
+Logic app running ACI|Warm|56s
+Docker WinNano|Cold |12s
+Function app Powershell|Cold|14s
+Function app Powershell|Warm|13s
+
+
+### Target 'https://docs.microsoft.com/en-us/azure/azure-functions/functions-compare-logic-apps-ms-flow-webjobs'
+Technique|Cold/warm|Execution time
+-|-|-
+Logic app running ACI|Cold|56s
+Logic app running ACI|Warm|44s
+Docker WinNano|Cold |1.8s
+Function app Powershell|Cold|11s
+Function app Powershell|Warm|1.7s
