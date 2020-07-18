@@ -56,6 +56,8 @@ Password: -
 
 ```
 az acr build -t countwords:v1 -r acrpihl  --platform windows -f dockerfile .
+az acr build -t wincountword:v1 -r acrpihl --platform windows -f dockerfileWin .
+az acr import -n acrpihl --source acrpihl.azurecr.io/wincountword:v1 -t wincountword:latest
 ```
 
 ```yaml
