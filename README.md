@@ -14,7 +14,9 @@ Lab project on containers, logic apps and functions in Azure.
 * [ ] Use logic app actions to run "code"
 * [ ] Build pipeline to build container image when code is committed.
 
-## Action
+## Container Docker/ACI/ACR
+
+### Action
 
 ```docker
 docker build --tag nanocountwords:v1 .
@@ -24,13 +26,13 @@ docker rm $(docker ps -aq)
 docker run --env MinimumLength=10 nanocountwords:v4
 docker rmi $(docker images nanoc* -q)
 ```
-### run
+#### run
 ```powershell
 docker run --env-file env.list  nanocountwords:v6 | ConvertFrom-Json | Select-Object -ExpandProperty Data
 
 docker run --env uri="https://docs.microsoft.com/en-us/azure/azure-functions/functions-compare-logic-apps-ms-flow-webjobs" --env MinimumLength=7 --env NumberWords=7 countword
 ```
-### output
+#### output
 ```
 Count Name
 ----- ----
@@ -41,11 +43,11 @@ Count Name
    64 GUILDENSTERN
 ```
 
-## Azure
+### Azure
 
-### ACR
+#### ACR
 
-#### ACR access
+##### ACR access
 ```yaml
 Login server: acrpihl.azurecr.io
 Registry name: acrpihl
@@ -71,11 +73,11 @@ az acr build -t countwords:v1 -r acrpihl  --platform windows -f dockerfile .
   git: {}
 Run ID: cg1 was successful after 1m34s
 ```
-#### Docker image in ACR
+##### Docker image in ACR
 ```
 docker pull acrpihl.azurecr.io/countwords:v1
 ```
-#### ACI
+##### ACI
 Error;
 ```json
 {
@@ -91,12 +93,16 @@ Error;
 ```
 Changed base image to lts-nanoserver-1809 and deployment in ACI completed
 
-## Logic apps
+## Invoke Logic apps
 ```powershell
      $uri = 'https://prod-40.northeurope.logic.azure.com:443/workflows/42b952b8137d4172ac376993e9cefcc2/triggers/manual/paths/invoke?numberwords=3&minimumlength=6&uri=http://shakespeare.mit.edu/romeo_juliet/full.html&api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<code>'
         (Invoke-WebRequest -Uri $uri | ConvertFrom-Json).inputs.body
  ```
+
+
 ## Function apps
+
+### Invoke function apps
 ```powershell
     Invoke-RestMethod -Method Post -Uri 'http://localhost:7071/api/HttpTrigger1' `
     -Body '{"uri":"https://docs.microsoft.com/en-us/dotnet/api/system.net.httpstatuscode?view=netcore-3.1"}' |
