@@ -6,12 +6,13 @@ Lab project on containers, logic apps and functions in Azure.
 [ACI wordcount](https://hub.docker.com/_/microsoft-azuredocs-aci-wordcount) on Linux & python
 
 ## Plan
-* :heavy_check_mark: Create windows server [nano container running powershell 7](https://hub.docker.com/_/microsoft-powershell)
-  * :heavy_check_mark: Accept optional url input for input
-  * :heavy_check_mark: output result in json
-* :heavy_check_mark: Create logic app and trigger by webhook
-* :heavy_check_mark: Create function app
-* :white_check_mark: Build pipeline to build container image when code is committed.
+* [x] Create windows server [nano container running powershell 7](https://hub.docker.com/_/microsoft-powershell)
+  * [x] Accept optional url input for input
+  * [x] Output result in json
+* [x] Create logic app and trigger by webhook
+* [x] Create function app
+* [ ] Use logic app actions to run "code"
+* [ ] Build pipeline to build container image when code is committed.
 
 ## Action
 
